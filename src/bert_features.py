@@ -6,7 +6,8 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 from src import df_maker
 from logzero import logger
-
+import pickle
+from src.text_preprocess import (Compose, ReplyRemove, ZenToHan, SpaceRemove)
 
 class BertFeatures(object):
 
@@ -28,6 +29,7 @@ class BertFeatures(object):
         return id_dict["input_ids"], id_dict["attention_mask"]
 
     def get_features(self, df):
+        df[["TEXT", "MASK"]] = df.apply(lambda x: self._tokenize(x["full_text"]), axis=1, result_type="expand")
         ds = TensorDataset(torch.tensor(df["TEXT"], dtype=torch.int64),
                            torch.tensor(df["MASK"], dtype=torch.int64))
         dl = DataLoader(ds, batch_size=self.batch_size, shuffle=False)
@@ -61,13 +63,25 @@ def tokenize(text, max_length=256):
 
 def main():
     df = df_maker.read_json_lines("./data/tweets.csv")
+
+    transform = Compose(
+        [
+            ReplyRemove(),
+            ZenToHan(),
+            SpaceRemove()
+        ]
+    )
+    df["full_text"] = df["full_text"].apply(transform)
+
     df[["TEXT", "MASK"]] = df.apply(lambda x: tokenize(x["full_text"]), axis=1, result_type="expand")
 
     bert_features = get_features(df)
-    num = bert_features.shape[1]
-    cols = [f"bert_{i}" for i in range(num)]
-    bert_features_df = pd.DataFrame(bert_features, columns=cols)
-    bert_features_df.to_csv("./data/input/bert_features.csv", index=False)
+    # num = bert_features.shape[1]
+    # cols = [f"bert_{i}" for i in range(num)]
+    # bert_features_df = pd.DataFrame(bert_features, columns=cols)
+    # bert_features_df.to_csv("./data/input/bert_features.csv", index=False)
+    with open("./data/input/bert_features.pkl", "wb") as f:
+        pickle.dump(bert_features, f)
 
 
 def get_features(df):

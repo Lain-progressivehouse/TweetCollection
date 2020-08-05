@@ -3,6 +3,7 @@ from gensim.test.utils import datapath
 import os
 import numpy as np
 import joblib
+import pandas as pd
 
 class Swem(object):
     """
@@ -92,3 +93,8 @@ class Swem(object):
             swems.append(np.r_[np.mean(word_embeddings, axis=0), np.max(word_embeddings, axis=0)])
 
         return np.array(swems)
+
+def main():
+    swem = Swem(file_path="./data/model/chive-1.1-mc5-20200318/chive-1.1-mc5-20200318.txt", is_train=True)
+    df = pd.read_csv("./data/tweets_wakati_hinshi.csv")
+
