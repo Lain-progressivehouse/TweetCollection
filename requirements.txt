@@ -25,3 +25,4 @@ emoji
 gensim
 sudachipy
 SudachiDict-core
+unidic-lite
