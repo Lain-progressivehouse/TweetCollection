@@ -43,7 +43,8 @@ class BertFeatures(object):
         return np.concatenate(preds, axis=0)
 
 
-MODEL_NAME = "bert-base-japanese-whole-word-masking"
+# MODEL_NAME = "bert-base-japanese-whole-word-masking"
+MODEL_NAME = "cl-tohoku/bert-base-japanese-whole-word-masking"
 tokenizer = BertJapaneseTokenizer.from_pretrained(MODEL_NAME)
 config = BertConfig.from_pretrained(MODEL_NAME)
 bert = BertModel.from_pretrained(MODEL_NAME)
