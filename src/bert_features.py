@@ -66,7 +66,8 @@ def tokenize(text, max_length=128):
 
 
 def main():
-    df = df_maker.read_json_lines("./data/tweets")
+    # df = df_maker.read_json_lines("./data/tweets")
+    df = pd.read_csv("./data/tweets.csv")
 
     transform = Compose(
         [
