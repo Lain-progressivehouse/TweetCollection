@@ -26,7 +26,8 @@ class BertFeatures(object):
     def _tokenize(self, text):
         id_dict = tokenizer.encode_plus(str(text),
                                         max_length=self.max_length,
-                                        pad_to_max_length=True)
+                                        pad_to_max_length=True,
+                                        truncation=True)
         return id_dict["input_ids"], id_dict["attention_mask"]
 
     def get_features(self, df):
