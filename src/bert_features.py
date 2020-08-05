@@ -9,6 +9,7 @@ from logzero import logger
 import pickle
 from src.text_preprocess import (Compose, ReplyRemove, ZenToHan, SpaceRemove)
 
+
 class BertFeatures(object):
 
     def __init__(self, max_length=256, batch_size=64, model_name="bert-base-japanese-whole-word-masking"):
@@ -55,7 +56,7 @@ print(f"使用デバイス: {device}")
 bert.to(device)
 
 
-def tokenize(text, max_length=256):
+def tokenize(text, max_length=128):
     id_dict = tokenizer.encode_plus(str(text),
                                     max_length=max_length,
                                     pad_to_max_length=True)
