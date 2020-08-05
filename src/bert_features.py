@@ -60,7 +60,8 @@ bert.to(device)
 def tokenize(text, max_length=128):
     id_dict = tokenizer.encode_plus(str(text),
                                     max_length=max_length,
-                                    pad_to_max_length=True)
+                                    pad_to_max_length=True,
+                                    truncation=True)
     return id_dict["input_ids"], id_dict["attention_mask"]
 
 
