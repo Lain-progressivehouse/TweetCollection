@@ -58,7 +58,6 @@ bert.to(device)
 
 
 def tokenize(text, max_length=128):
-    print(text)
     id_dict = tokenizer.encode_plus(str(text),
                                     max_length=max_length,
                                     pad_to_max_length=True)
