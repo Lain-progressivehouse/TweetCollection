@@ -15,8 +15,9 @@ def read_json_lines(path: str, output="./data/tweets.csv") -> pd.DataFrame:
     json_dict = defaultdict(list)
 
     with open(path, "r") as fin:
-        for line in tqdm(fin):
-            data = json.loads(line)
+        # for line in tqdm(fin):
+        #     data = json.loads(line)
+        for data in tqdm(json.load(fin)):
             for key in data.keys():
                 json_dict[key].append(list(data[key].values())[0] if isinstance(data[key], dict) else data[key])
 

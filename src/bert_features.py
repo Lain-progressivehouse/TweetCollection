@@ -2,7 +2,7 @@ from transformers import BertConfig, BertJapaneseTokenizer, BertModel
 import pandas as pd
 import numpy as np
 import torch
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, Dataset
 from tqdm import tqdm
 from src import df_maker
 from logzero import logger
@@ -10,18 +10,26 @@ import pickle
 from src.text_preprocess import (Compose, ReplyRemove, ZenToHan, SpaceRemove)
 
 
-class BertFeatures(object):
-
-    def __init__(self, max_length=256, batch_size=64, model_name="bert-base-japanese-whole-word-masking"):
+class BertDataset(Dataset):
+    def __init__(self, df, max_length=128, model_name="bert-base-japanese-whole-word-masking", transforms=None):
         self.max_length = max_length
-        self.batch_size = batch_size
+        self.df = df
         self.model_name = model_name
-        self.tokenizer = BertJapaneseTokenizer.from_pretrained(MODEL_NAME)
-        self.config = BertConfig.from_pretrained(MODEL_NAME)
-        self.bert = BertModel.from_pretrained(MODEL_NAME)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"使用デバイス: {device}")
-        self.bert.to(device)
+        self.tokenizer = BertJapaneseTokenizer.from_pretrained(model_name)
+        self.transforms = transforms
+
+    def __getitem__(self, index):
+        data = {}
+        row = self.df.iloc[index]
+        if self.transforms is not None:
+            row["full_text"] = self.transforms(row["full_text"])
+        input_ids, attention_mask = self._tokenize(row["full_text"])
+        data["input_ids"] = input_ids
+        data["attention_mask"] = attention_mask
+        return data
+
+    def __len__(self):
+        return len(self.df)
 
     def _tokenize(self, text):
         id_dict = tokenizer.encode_plus(str(text),
@@ -30,13 +38,32 @@ class BertFeatures(object):
                                         truncation=True)
         return id_dict["input_ids"], id_dict["attention_mask"]
 
+
+class BertFeatures(object):
+
+    def __init__(self, max_length=128, batch_size=64, model_name="bert-base-japanese-whole-word-masking",
+                 transforms=None):
+        self.max_length = max_length
+        self.batch_size = batch_size
+        self.model_name = model_name
+        self.config = BertConfig.from_pretrained(model_name)
+        self.bert = BertModel.from_pretrained(model_name)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"使用デバイス: {device}")
+        self.bert.to(device)
+        self.transforms = transforms
+
     def get_features(self, df):
-        df[["TEXT", "MASK"]] = df.apply(lambda x: self._tokenize(x["full_text"]), axis=1, result_type="expand")
-        ds = TensorDataset(torch.tensor(df["TEXT"], dtype=torch.int64),
-                           torch.tensor(df["MASK"], dtype=torch.int64))
+        ds = Dataset(
+            df,
+            max_length=self.max_length,
+            model_name=self.model_name,
+            transforms=self.transforms
+        )
         dl = DataLoader(ds, batch_size=self.batch_size, shuffle=False)
         preds = []
-        for input_ids, attention_mask in tqdm(dl):
+        for batch in tqdm(dl):
+            input_ids, attention_mask = batch["input_ids"], batch["attention_mask"]
             input_ids, attention_mask = input_ids.to(device), attention_mask.to(device)
             output = bert(input_ids=input_ids, attention_mask=attention_mask)
             output = output[0]
